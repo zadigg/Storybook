@@ -121,25 +121,40 @@ async function generatePanelImage(panel: any, pageIndex: number, panelIndex: num
     }
 
     // Create a detailed prompt for the Gemini 2.5 Flash Image API
-    const imagePrompt = `Create a comic book panel illustration for this scene:
+    const speechBubblePositions = [
+      'Position the speaking character in the bottom-right area of the panel, facing left, so speech bubble can appear in top-left',
+      'Position the speaking character in the bottom-left area of the panel, facing right, so speech bubble can appear in top-right', 
+      'Position the speaking character in the bottom-center of the panel, looking up, so speech bubble can appear at the top-center',
+      'Position the speaking character in the top-right area of the panel, facing down-left, so speech bubble can appear in middle-left',
+      'Position the speaking character in the top-left area of the panel, facing down-right, so speech bubble can appear in middle-right',
+      'Position the speaking character in the top-center of the panel, facing down, so speech bubble can appear in bottom-left'
+    ]
+    
+    const imagePrompt = `Create a complete comic book panel illustration with speech bubble for this scene:
 
-    Panel Text: ${panel.text}
+    DIALOGUE TO INCLUDE: "${panel.text}"
     Character: ${panel.characterDescription || 'A friendly character'}
     Scene: ${panel.sceneDescription || 'A beautiful setting'}
     Panel Position: Panel ${panelIndex + 1} of 6 on page ${pageIndex + 1}
 
-    Style: Professional comic book panel with:
+    REQUIREMENTS:
+    - Include a white speech bubble with black border containing the exact text: "${panel.text}"
+    - Position the character so the speech bubble naturally points to their mouth
+    - Use comic book style speech bubble with a tail pointing to the character's mouth
+    - Make the text in the speech bubble clear and readable in comic book font
+    - Character should be clearly visible and positioned for natural dialogue flow
+
+    Style: Complete comic book panel with:
     - Wide rectangular aspect ratio (2:1) - width is twice the height
-    - This panel takes up 1/3 of screen width and 1/2 of screen height
     - Bold black outlines and vibrant colors
-    - Dynamic composition with proper character positioning
+    - Dynamic composition with character positioned for speech bubble
     - Dramatic lighting and shadows
-    - Comic book panel layout with clear focal points
-    - No text or speech bubbles (text will be added separately)
+    - WHITE SPEECH BUBBLE with BLACK BORDER containing the dialogue text
+    - Speech bubble tail pointing directly to character's mouth
     - High contrast and bold visual impact
     - Comic book art style like Marvel or DC comics
     - Fill the entire frame with action and detail
-    - Optimized for full-screen comic book display`
+    - Professional comic book panel with integrated dialogue`
 
     console.log('📝 Image prompt:', imagePrompt)
     console.log('🚀 Calling Gemini 2.5 Flash Image API...')

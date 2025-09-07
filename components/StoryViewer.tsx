@@ -129,6 +129,8 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
                       <span className="text-2xl">🎨</span>
                     </div>
                   )}
+                  
+                  {/* Bottom text for backup (AI should include speech bubbles in image) */}
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="bg-white/95 rounded-lg p-2 border-2 border-black">
                       <p className="text-xs font-bold text-center text-black" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
@@ -152,6 +154,8 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
                       <span className="text-2xl">🎨</span>
                     </div>
                   )}
+                  
+                  {/* Bottom text for backup (AI should include speech bubbles in image) */}
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="bg-white/95 rounded-lg p-2 border-2 border-black">
                       <p className="text-xs font-bold text-center text-black" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
@@ -175,6 +179,8 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
                       <span className="text-2xl">🎨</span>
                     </div>
                   )}
+                  
+                  {/* Bottom text for backup (AI should include speech bubbles in image) */}
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="bg-white/95 rounded-lg p-2 border-2 border-black">
                       <p className="text-xs font-bold text-center text-black" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
@@ -198,6 +204,8 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
                       <span className="text-2xl">🎨</span>
                     </div>
                   )}
+                  
+                  {/* Bottom text for backup (AI should include speech bubbles in image) */}
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="bg-white/95 rounded-lg p-2 border-2 border-black">
                       <p className="text-xs font-bold text-center text-black" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
@@ -221,6 +229,8 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
                       <span className="text-2xl">🎨</span>
                     </div>
                   )}
+                  
+                  {/* Bottom text for backup (AI should include speech bubbles in image) */}
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="bg-white/95 rounded-lg p-2 border-2 border-black">
                       <p className="text-xs font-bold text-center text-black" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
@@ -244,6 +254,8 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
                       <span className="text-2xl">🎨</span>
                     </div>
                   )}
+                  
+                  {/* Bottom text for backup (AI should include speech bubbles in image) */}
                   <div className="absolute bottom-2 left-2 right-2">
                     <div className="bg-white/95 rounded-lg p-2 border-2 border-black">
                       <p className="text-xs font-bold text-center text-black" style={{ fontFamily: 'Comic Sans MS, cursive' }}>
