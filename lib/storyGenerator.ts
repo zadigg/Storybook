@@ -35,12 +35,12 @@ export async function generateCompleteStory(userIdea: string): Promise<CompleteS
         {
           "title": "Page Title",
           "panels": [
-            {
-              "text": "Dialogue or narration for this panel (1-2 sentences)",
-              "characterDescription": "Character description for this specific panel",
-              "sceneDescription": "Scene description for this specific panel",
-              "panelType": "main" or "small" or "wide"
-            }
+        {
+          "text": "Short dialogue or narration (max 8-10 words)",
+          "characterDescription": "Character description for this specific panel",
+          "sceneDescription": "Scene description for this specific panel",
+          "panelType": "main" or "small" or "wide"
+        }
           ]
         }
       ]
@@ -49,12 +49,14 @@ export async function generateCompleteStory(userIdea: string): Promise<CompleteS
     Requirements:
     - Create 4-6 pages for a complete comic book
     - Each page must have exactly 6 panels (arranged in 2 rows of 3 panels each)
+    - Each panel text must be SHORT (maximum 8-10 words) to fit in speech bubbles
     - Each panel should advance the story with dialogue or action
     - Include character development and visual storytelling
     - Make it suitable for children (ages 5-12)
     - Use comic book panel structure like real comic books
     - Panel 1-3: Top row panels (setup, action, reaction)
     - Panel 4-6: Bottom row panels (development, climax, resolution)
+    - Keep dialogue concise and punchy like real comic books
     - Make the story engaging and educational`
 
     const response = await genAI!.models.generateContent({
@@ -132,29 +134,36 @@ async function generatePanelImage(panel: any, pageIndex: number, panelIndex: num
     
     const imagePrompt = `Create a complete comic book panel illustration with speech bubble for this scene:
 
+    EXACT PANEL DIMENSIONS: This image will be displayed in a rectangle that is 33.33% of screen width by 50% of screen height
     DIALOGUE TO INCLUDE: "${panel.text}"
     Character: ${panel.characterDescription || 'A friendly character'}
     Scene: ${panel.sceneDescription || 'A beautiful setting'}
     Panel Position: Panel ${panelIndex + 1} of 6 on page ${pageIndex + 1}
 
-    REQUIREMENTS:
-    - Include a white speech bubble with black border containing the exact text: "${panel.text}"
-    - Position the character so the speech bubble naturally points to their mouth
-    - Use comic book style speech bubble with a tail pointing to the character's mouth
-    - Make the text in the speech bubble clear and readable in comic book font
-    - Character should be clearly visible and positioned for natural dialogue flow
+    CRITICAL SIZING CONSTRAINTS:
+    - This image will be displayed in a WIDE RECTANGLE (approximately 500px wide x 250px tall)
+    - The image aspect ratio is 2:1 (width is exactly twice the height)
+    - Include a white speech bubble with thick black border containing: "${panel.text}"
+    - SPEECH BUBBLE MUST BE POSITIONED IN THE CENTER 70% of the panel area
+    - Leave 15% margin on all sides to ensure no cutoff at panel edges
+    - Speech bubble should be HORIZONTALLY CENTERED and VERTICALLY CENTERED
+    - Text inside bubble must be LARGE ENOUGH to read clearly in this small panel
+    - Use BOLD, THICK comic book lettering that's clearly visible
+    - Character positioned in corners/edges so speech bubble has center space
+    - ABSOLUTELY NO PART of speech bubble or text should extend beyond the 2:1 rectangle
+    - Test that speech bubble fits: if panel is 500x250px, bubble should fit in 350x175px center area
 
-    Style: Complete comic book panel with:
-    - Wide rectangular aspect ratio (2:1) - width is twice the height
+    Style Requirements:
+    - Wide rectangular format (2:1 ratio) - width is exactly twice the height
     - Bold black outlines and vibrant colors
-    - Dynamic composition with character positioned for speech bubble
+    - Dynamic composition with character positioned to leave room for centered speech bubble
     - Dramatic lighting and shadows
-    - WHITE SPEECH BUBBLE with BLACK BORDER containing the dialogue text
-    - Speech bubble tail pointing directly to character's mouth
+    - WHITE SPEECH BUBBLE with THICK BLACK BORDER centered in the panel
+    - Speech bubble tail pointing to character's mouth but bubble stays centered
     - High contrast and bold visual impact
     - Comic book art style like Marvel or DC comics
-    - Fill the entire frame with action and detail
-    - Professional comic book panel with integrated dialogue`
+    - GUARANTEE all text and bubbles are contained within the 2:1 rectangle
+    - Professional comic book panel with complete, visible dialogue`
 
     console.log('📝 Image prompt:', imagePrompt)
     console.log('🚀 Calling Gemini 2.5 Flash Image API...')
