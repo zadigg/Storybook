@@ -79,26 +79,50 @@ export async function generateCompleteStory(userIdea: string): Promise<CompleteS
     
     const storyData = JSON.parse(cleanJson)
 
-    // Generate images for each panel in each page
-    const pagesWithImages = await Promise.all(
-      storyData.pages.map(async (page: any, pageIndex: number) => {
-        const panelsWithImages = await Promise.all(
-          page.panels.map(async (panel: any, panelIndex: number) => {
-            const imageUrl = await generatePanelImage(panel, pageIndex, panelIndex)
-            return {
-              ...panel,
-              imageUrl: imageUrl || undefined,
-              panelNumber: panelIndex + 1
-            }
+    // Generate images with character consistency
+    let referenceCharacterData: string | null = null
+    const pagesWithImages: any[] = []
+    
+    // Process each page sequentially to maintain character consistency
+    for (const page of storyData.pages) {
+      const pageIndex = storyData.pages.indexOf(page)
+      console.log(`🎭 Processing page ${pageIndex + 1}...`)
+      
+      const panelsWithImages: any[] = []
+      
+      // Process each panel sequentially
+      for (const panel of page.panels) {
+        const panelIndex = page.panels.indexOf(panel)
+        console.log(`🎨 Processing panel ${panelIndex + 1} of page ${pageIndex + 1}...`)
+        
+        if (panelIndex === 0 && pageIndex === 0) {
+          // First panel - generate and store reference character
+          console.log('🆕 Generating first panel and storing character reference...')
+          const result = await generateFirstPanelAndStoreCharacter(panel, pageIndex, panelIndex)
+          referenceCharacterData = result.characterData
+          panelsWithImages.push({
+            ...panel,
+            imageUrl: result.imageUrl || undefined,
+            panelNumber: panelIndex + 1
           })
-        )
-        return {
-          ...page,
-          panels: panelsWithImages,
-          pageNumber: pageIndex + 1
+        } else {
+          // Subsequent panels - use reference character
+          console.log('🔄 Using stored character reference for consistency...')
+          const imageUrl = await generatePanelImageWithCharacter(panel, pageIndex, panelIndex, referenceCharacterData)
+          panelsWithImages.push({
+            ...panel,
+            imageUrl: imageUrl || undefined,
+            panelNumber: panelIndex + 1
+          })
         }
+      }
+      
+      pagesWithImages.push({
+        ...page,
+        panels: panelsWithImages,
+        pageNumber: pageIndex + 1
       })
-    )
+    }
 
     return {
       title: storyData.title,
@@ -112,66 +136,198 @@ export async function generateCompleteStory(userIdea: string): Promise<CompleteS
   }
 }
 
-async function generatePanelImage(panel: any, pageIndex: number, panelIndex: number): Promise<string | null> {
+async function generateFirstPanelAndStoreCharacter(panel: any, pageIndex: number, panelIndex: number): Promise<{imageUrl: string | null, characterData: string | null}> {
+  try {
+    console.log('🎭 Generating first panel and extracting character reference...')
+    
+    if (!genAI) {
+      console.log('❌ No API key provided, skipping image generation')
+      return { imageUrl: null, characterData: null }
+    }
+
+    const imagePrompt = `Create a complete comic book panel illustration with speech bubble for this scene:
+
+    EXACT PANEL DIMENSIONS: 500px wide x 250px tall (2:1 aspect ratio)
+    DIALOGUE TO INCLUDE: "${panel.text}"
+    Character: ${panel.characterDescription || 'A friendly character'}
+    Scene: ${panel.sceneDescription || 'A beautiful setting'}
+
+    CRITICAL REQUIREMENTS:
+    - This is the FIRST panel - establish the main character's appearance
+    - Character should have DISTINCTIVE, MEMORABLE features for consistency
+    - Include a white speech bubble with thick black border containing: "${panel.text}"
+    - SPEECH BUBBLE MUST BE CENTERED with 15% margin from all edges
+    - Character positioned so speech bubble points to their mouth
+    - Use BOLD, THICK comic book lettering
+    - GUARANTEE all text fits within the 2:1 rectangle
+    - Make character appearance CONSISTENT and REPLICABLE
+
+    Style: 2:1 comic book panel with bold outlines, distinctive character design`
+
+    console.log('📝 First panel prompt:', imagePrompt)
+
+    const response = await genAI!.models.generateContent({
+      model: "gemini-2.5-flash-image-preview",
+      contents: imagePrompt,
+    })
+
+    // Extract the image data from the response
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        const imageData = part.inlineData.data
+        const mimeType = part.inlineData.mimeType || 'image/png'
+        console.log('✅ Successfully generated first panel and stored character reference!')
+        return {
+          imageUrl: `data:${mimeType};base64,${imageData}`,
+          characterData: imageData // Store raw base64 for reuse
+        }
+      }
+    }
+
+    console.log('❌ No image data found in first panel response')
+    return { imageUrl: null, characterData: null }
+
+  } catch (error) {
+    console.error('❌ Error generating first panel:', error)
+    return { imageUrl: null, characterData: null }
+  }
+}
+
+async function generateReferenceCharacter(firstPanel: any): Promise<string | null> {
+  try {
+    console.log('🎭 Generating reference character image...')
+    
+    if (!genAI) {
+      console.log('❌ No API key provided, skipping reference character generation')
+      return null
+    }
+
+    const characterPrompt = `Create a reference character illustration for a comic book:
+
+    Character Description: ${firstPanel?.characterDescription || 'A friendly character'}
+    
+    REQUIREMENTS:
+    - Create a clear, front-facing portrait of the character
+    - Square aspect ratio (1:1) for character reference
+    - Show the character from chest up with clear facial features
+    - Bold comic book art style with thick black outlines
+    - Vibrant colors and high contrast
+    - Clear, distinctive features that can be replicated
+    - No background distractions - simple or solid background
+    - Character should be centered and clearly visible
+    - This will be used as reference for consistency across all comic panels
+    
+    Style: Professional comic book character reference with:
+    - Bold black outlines and vibrant colors
+    - Clear, distinctive character features
+    - Front-facing pose for easy reference
+    - High contrast and bold visual impact
+    - Comic book art style like Marvel or DC comics`
+
+    console.log('📝 Reference character prompt:', characterPrompt)
+
+    const response = await genAI!.models.generateContent({
+      model: "gemini-2.5-flash-image-preview",
+      contents: characterPrompt,
+    })
+
+    // Extract the image data from the response
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        const imageData = part.inlineData.data
+        const mimeType = part.inlineData.mimeType || 'image/png'
+        console.log('✅ Successfully generated reference character!')
+        return imageData // Return base64 data for reuse
+      }
+    }
+
+    console.log('❌ No character image data found in response')
+    return null
+
+  } catch (error) {
+    console.error('❌ Error generating reference character:', error)
+    return null
+  }
+}
+
+async function generatePanelImageWithCharacter(panel: any, pageIndex: number, panelIndex: number, referenceCharacter: string | null): Promise<string | null> {
   try {
     console.log('🎨 Starting image generation for page:', pageIndex + 1, 'panel:', panelIndex + 1)
     console.log('🔑 API Key available:', !!genAI)
+    console.log('🎭 Using reference character:', !!referenceCharacter)
     
     if (!genAI) {
       console.log('❌ No API key provided, skipping image generation')
       return null
     }
 
-    // Create a detailed prompt for the Gemini 2.5 Flash Image API
-    const speechBubblePositions = [
-      'Position the speaking character in the bottom-right area of the panel, facing left, so speech bubble can appear in top-left',
-      'Position the speaking character in the bottom-left area of the panel, facing right, so speech bubble can appear in top-right', 
-      'Position the speaking character in the bottom-center of the panel, looking up, so speech bubble can appear at the top-center',
-      'Position the speaking character in the top-right area of the panel, facing down-left, so speech bubble can appear in middle-left',
-      'Position the speaking character in the top-left area of the panel, facing down-right, so speech bubble can appear in middle-right',
-      'Position the speaking character in the top-center of the panel, facing down, so speech bubble can appear in bottom-left'
-    ]
-    
-    const imagePrompt = `Create a complete comic book panel illustration with speech bubble for this scene:
+    let promptContent
 
-    EXACT PANEL DIMENSIONS: This image will be displayed in a rectangle that is 33.33% of screen width by 50% of screen height
-    DIALOGUE TO INCLUDE: "${panel.text}"
-    Character: ${panel.characterDescription || 'A friendly character'}
-    Scene: ${panel.sceneDescription || 'A beautiful setting'}
-    Panel Position: Panel ${panelIndex + 1} of 6 on page ${pageIndex + 1}
+    if (referenceCharacter) {
+      // Use image editing with the reference character
+      console.log('🔄 Using reference character for consistent appearance')
+      
+      promptContent = [
+        { 
+          text: `CRITICAL: Use the EXACT SAME CHARACTER from the reference image. Create a new comic book panel:
 
-    CRITICAL SIZING CONSTRAINTS:
-    - This image will be displayed in a WIDE RECTANGLE (approximately 500px wide x 250px tall)
-    - The image aspect ratio is 2:1 (width is exactly twice the height)
-    - Include a white speech bubble with thick black border containing: "${panel.text}"
-    - SPEECH BUBBLE MUST BE POSITIONED IN THE CENTER 70% of the panel area
-    - Leave 15% margin on all sides to ensure no cutoff at panel edges
-    - Speech bubble should be HORIZONTALLY CENTERED and VERTICALLY CENTERED
-    - Text inside bubble must be LARGE ENOUGH to read clearly in this small panel
-    - Use BOLD, THICK comic book lettering that's clearly visible
-    - Character positioned in corners/edges so speech bubble has center space
-    - ABSOLUTELY NO PART of speech bubble or text should extend beyond the 2:1 rectangle
-    - Test that speech bubble fits: if panel is 500x250px, bubble should fit in 350x175px center area
+          DIALOGUE TO INCLUDE: "${panel.text}"
+          Scene: ${panel.sceneDescription || 'A beautiful setting'}
+          Panel Position: Panel ${panelIndex + 1} of 6 on page ${pageIndex + 1}
 
-    Style Requirements:
-    - Wide rectangular format (2:1 ratio) - width is exactly twice the height
-    - Bold black outlines and vibrant colors
-    - Dynamic composition with character positioned to leave room for centered speech bubble
-    - Dramatic lighting and shadows
-    - WHITE SPEECH BUBBLE with THICK BLACK BORDER centered in the panel
-    - Speech bubble tail pointing to character's mouth but bubble stays centered
-    - High contrast and bold visual impact
-    - Comic book art style like Marvel or DC comics
-    - GUARANTEE all text and bubbles are contained within the 2:1 rectangle
-    - Professional comic book panel with complete, visible dialogue`
+          CHARACTER CONSISTENCY REQUIREMENTS:
+          - COPY the character from the reference image EXACTLY - same colors, same design, same features
+          - DO NOT change the character's appearance, color scheme, or design in ANY way
+          - Keep the robot's red and blue colors IDENTICAL to the reference
+          - Maintain the same proportions, size, and distinctive features
+          - Only change the character's pose and position for the new scene
+          - Place this IDENTICAL character in the new scene: ${panel.sceneDescription}
+          
+          SPEECH BUBBLE REQUIREMENTS:
+          - Include a white speech bubble with thick black border containing: "${panel.text}"
+          - SPEECH BUBBLE MUST FIT COMPLETELY within the 2:1 panel (500x250px)
+          - Center the speech bubble with 15% margin from all edges
+          - Position speech bubble so it points to the character's mouth
+          - Use BOLD, THICK comic book lettering
+          - NO PART of speech bubble should be cut off
 
-    console.log('📝 Image prompt:', imagePrompt)
+          Style: 2:1 aspect ratio comic panel with IDENTICAL character from reference image` 
+        },
+        {
+          inlineData: {
+            mimeType: "image/png",
+            data: referenceCharacter,
+          },
+        },
+      ]
+    } else {
+      // First panel - generate without reference
+      console.log('🆕 Generating first panel without reference character')
+      
+      promptContent = `Create a complete comic book panel illustration with speech bubble for this scene:
+
+      EXACT PANEL DIMENSIONS: 500px wide x 250px tall (2:1 aspect ratio)
+      DIALOGUE TO INCLUDE: "${panel.text}"
+      Character: ${panel.characterDescription || 'A friendly character'}
+      Scene: ${panel.sceneDescription || 'A beautiful setting'}
+
+      CRITICAL SIZING CONSTRAINTS:
+      - Include a white speech bubble with thick black border containing: "${panel.text}"
+      - SPEECH BUBBLE MUST BE CENTERED with 15% margin from all edges
+      - Character positioned so speech bubble has space and points to mouth
+      - Use BOLD, THICK comic book lettering
+      - GUARANTEE all text fits within the 2:1 rectangle
+
+      Style: 2:1 comic book panel with bold outlines and vibrant colors`
+    }
+
+    console.log('📝 Using', referenceCharacter ? 'character-consistent' : 'new character', 'prompt')
     console.log('🚀 Calling Gemini 2.5 Flash Image API...')
 
     // Use the Gemini 2.5 Flash Image API
     const response = await genAI!.models.generateContent({
       model: "gemini-2.5-flash-image-preview",
-      contents: imagePrompt,
+      contents: promptContent,
     })
 
     console.log('📡 API Response received:', {
