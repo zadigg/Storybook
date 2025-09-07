@@ -83,6 +83,19 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
               Page {currentPage + 1} of {totalPages}
             </div>
           </div>
+
+          {/* Page Title in Navigation */}
+          <div className="text-center flex-1 mx-8">
+            <h2 className="text-lg md:text-xl font-black text-white drop-shadow-lg" 
+                style={{
+                  textShadow: '2px 2px 0px #000, 4px 4px 0px #ff6b35',
+                  fontFamily: 'Impact, Arial Black, sans-serif',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase'
+                }}>
+              {currentPageData.title || `Page ${currentPage + 1}`}
+            </h2>
+          </div>
           
           <div className="flex items-center space-x-2">
             <button
@@ -103,18 +116,6 @@ export default function StoryViewer({ onNewStory }: StoryViewerProps) {
       {/* Comic Book Page */}
       <div className="absolute inset-0 top-16 bottom-20">
         <div className={`transition-all duration-500 w-full h-full ${isAnimating ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`}>
-          {/* Page Title - Overlay on top */}
-          <div className="absolute top-2 left-0 right-0 z-30 text-center">
-            <h2 className="text-xl md:text-2xl font-black text-white drop-shadow-2xl" 
-                style={{
-                  textShadow: '3px 3px 0px #000, 5px 5px 0px #ff6b35, 7px 7px 0px #000',
-                  fontFamily: 'Impact, Arial Black, sans-serif',
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase'
-                }}>
-              {currentPageData.title || `Page ${currentPage + 1}`}
-            </h2>
-          </div>
 
           {/* Full Screen Comic Book Page Layout */}
           <div className="w-full h-full relative bg-black">
